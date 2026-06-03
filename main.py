@@ -94,7 +94,8 @@ async def run_job_search_agent(
     resume: UploadFile = File(...),
     target_role: str = Form(...),
     location: str = Form(...),
-    work_type: str = Form(...)
+    work_type: str = Form(...),
+    experience_level: str = Form(...)
 ):
 
     pdf_text = ""
@@ -113,7 +114,8 @@ async def run_job_search_agent(
         pdf_text,
         target_role,
         location,
-        work_type
+        work_type,
+        experience_level
     )
 
     return result

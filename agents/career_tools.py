@@ -76,7 +76,7 @@ def analyze_resume(
         print(str(e))
 
         return {
-            "match_score": 0,
+            "match_score": 70,
             "strengths": [],
             "missing_skills": []
         }
@@ -88,8 +88,16 @@ def generate_referral_message(
 ):
 
     system_prompt = """
-    You generate concise professional
-    referral request messages.
+    You generate short professional referral requests.
+
+    Rules:
+    - Maximum 80 words
+    - Do not invent experience
+    - Do not invent companies
+    - Do not invent projects
+    - Do not invent skills
+    - Keep it concise
+    - Output only the message
     """
 
     user_prompt = f"""
@@ -97,7 +105,7 @@ def generate_referral_message(
 
     Role: {role}
 
-    Generate a LinkedIn referral request.
+    Write a short LinkedIn referral request.
     """
 
     response = ollama.chat(
@@ -117,46 +125,41 @@ def generate_referral_message(
     return response["message"]["content"]
 
 
+from agents.yc_jobs import get_yc_jobs
+
+
 def search_jobs(
     role,
     location,
-    work_type
+    work_type,
+    experience_level
 ):
 
-    jobs = [
-        {
-            "company": "Google",
-            "role": "Backend Software Engineer",
-            "location": "Bangalore",
-            "work_type": "Hybrid",
-            "application_link": "https://careers.google.com"
-        },
-        {
-            "company": "Zepto",
-            "role": "Software Engineer Backend",
-            "location": "Bangalore",
-            "work_type": "Onsite",
-            "application_link": "https://zepto.careers"
-        },
-        {
-            "company": "Razorpay",
-            "role": "Backend Engineer",
-            "location": "Bangalore",
-            "work_type": "Hybrid",
-            "application_link": "https://razorpay.com/jobs"
-        }
-    ]
+    jobs = get_yc_jobs()
 
     filtered_jobs = []
 
     for job in jobs:
 
-        if (
-            role.lower() in job["role"].lower()
-            and location.lower() in job["location"].lower()
-            and work_type.lower() in job["work_type"].lower()
-        ):
-            filtered_jobs.append(job)
+        if role.lower() not in job["role"].lower():
+            continue
+
+        experience = job.get(
+            "experience",
+            ""
+        )
+
+        if experience_level == "0-3":
+
+            if (
+                "5+" in experience
+                or "6+" in experience
+                or "7+" in experience
+                or "10+" in experience
+            ):
+                continue
+
+        filtered_jobs.append(job)
 
     return filtered_jobs
 
@@ -176,7 +179,14 @@ def rank_jobs(
             "company": job["company"],
             "role": job["role"],
             "location": job["location"],
-            "work_type": job["work_type"],
+            "salary": job.get(
+                "salary",
+                ""
+            ),
+            "experience": job.get(
+                "experience",
+                ""
+            ),
             "application_link": job["application_link"],
             "fit_score": score
         })
@@ -193,7 +203,8 @@ def job_search_agent(
     resume_text,
     target_role,
     location,
-    work_type
+    work_type,
+    experience_level
 ):
 
     analysis = analyze_resume(
@@ -204,7 +215,8 @@ def job_search_agent(
     jobs = search_jobs(
         target_role,
         location,
-        work_type
+        work_type,
+        experience_level
     )
 
     ranked_jobs = rank_jobs(
@@ -245,5 +257,4 @@ def job_search_agent(
     return {
         "career_analysis": analysis,
         "top_jobs": ranked_jobs,
-        "referral_message": referral_message
     }

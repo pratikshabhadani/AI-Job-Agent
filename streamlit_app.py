@@ -50,6 +50,15 @@ if page == "Job Search":
         ]
     )
 
+    experience_level = st.selectbox(
+        "Experience Level",
+        [
+            "0-3",
+            "3-5",
+            "5+"
+        ]
+    )
+
     if st.button("Run Job Search"):
 
         if resume is None:
@@ -67,7 +76,8 @@ if page == "Job Search":
             data = {
                 "target_role": target_role,
                 "location": location,
-                "work_type": work_type
+                "work_type": work_type,
+                "experience_level": experience_level
             }
 
             response = requests.post(
@@ -148,7 +158,11 @@ if page == "Job Search":
                         )
 
                         st.write(
-                            f"**Work Type:** {job['work_type']}"
+                            f"**Experience:** {job.get('experience', '')}"
+                        )
+
+                        st.write(
+                            f"**Salary:** {job.get('salary', '')}"
                         )
 
                         st.write(
@@ -158,14 +172,6 @@ if page == "Job Search":
                         st.write(
                             f"**Application Link:** {job['application_link']}"
                         )
-
-                st.subheader(
-                    "Referral Message"
-                )
-
-                st.write(
-                    result["referral_message"]
-                )
 
 # ==================================
 # SAVED JOBS PAGE
