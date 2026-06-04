@@ -36,6 +36,9 @@ AI Job Agent helps job seekers analyze resumes, discover startup opportunities f
 - FastAPI backend
 - Interactive dashboard
 
+### Screenshots: <img width="1439" height="808" alt="home1" src="https://github.com/user-attachments/assets/b14f8510-9095-4480-adb8-d17cf2b34e27" />
+<img width="1440" height="786" alt="result1" src="https://github.com/user-attachments/assets/3dd0c5ff-7a12-43e1-be26-d9eb94b215a2" />
+
 ---
 
 ## Tech Stack
