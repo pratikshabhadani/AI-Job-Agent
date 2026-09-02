@@ -1,124 +1,90 @@
-from fastapi import FastAPI, UploadFile, File, Form
-from pydantic import BaseModel
-from typing import List
-import fitz
+from fastapi import FastAPI, Form
 
-from agents.career_tools import (
-    analyze_resume,
-    generate_referral_message,
-    search_jobs,
-    rank_jobs,
-    job_search_agent
-)
+from agents.career_tools import job_search_agent
 
 from database.db import (
-    get_jobs
+    get_jobs,
+    save_job,
+    job_exists,
+    delete_job
 )
 
 app = FastAPI()
-
-
-class CareerAnalysis(BaseModel):
-    match_score: int
-    strengths: List[str]
-    missing_skills: List[str]
 
 
 @app.get("/")
 def home():
 
     return {
-        "message": "AI Job Agent Running"
-    }
-
-
-@app.post("/career-agent")
-async def career_agent(
-    resume: UploadFile = File(...),
-    target_role: str = Form(...)
-):
-
-    pdf_text = ""
-
-    pdf_bytes = await resume.read()
-
-    pdf_document = fitz.open(
-        stream=pdf_bytes,
-        filetype="pdf"
-    )
-
-    for page in pdf_document:
-        pdf_text += page.get_text()
-
-    analysis = analyze_resume(
-        pdf_text,
-        target_role
-    )
-
-    validated_response = CareerAnalysis(
-        **analysis
-    )
-
-    return validated_response
-
-
-@app.get("/generate-referral")
-def generate_referral():
-
-    message = generate_referral_message(
-        "Google",
-        "Backend Software Engineer"
-    )
-
-    return {
-        "referral_message": message
-    }
-
-
-@app.get("/search-jobs")
-def search_jobs_endpoint():
-
-    jobs = search_jobs(
-        "Backend",
-        "Bangalore",
-        "Hybrid"
-    )
-
-    return {
-        "jobs": jobs
+        "message": "AI Career Agent Running"
     }
 
 
 @app.post("/job-search-agent")
 async def run_job_search_agent(
-    resume: UploadFile = File(...),
     target_role: str = Form(...),
-    location: str = Form(...),
-    work_type: str = Form(...),
-    experience_level: str = Form(...)
+    experience_level: str = Form(...),
+    location: str = Form("")
 ):
 
-    pdf_text = ""
-
-    pdf_bytes = await resume.read()
-
-    pdf_document = fitz.open(
-        stream=pdf_bytes,
-        filetype="pdf"
-    )
-
-    for page in pdf_document:
-        pdf_text += page.get_text()
-
     result = job_search_agent(
-        pdf_text,
         target_role,
-        location,
-        work_type,
-        experience_level
+        "",
+        experience_level,
+        "",
+        location
     )
 
     return result
+
+
+@app.post("/save-job")
+async def save_job_endpoint(
+    company: str = Form(...),
+    role: str = Form(...),
+    location: str = Form(""),
+    job_link: str = Form(...)
+):
+
+    if job_exists(
+        company,
+        role
+    ):
+
+        return {
+            "success": False,
+            "message": "Job already saved."
+        }
+
+    save_job(
+        company=company,
+        role=role,
+        location=location,
+        job_link=job_link,
+        fit_score=0,
+        status="SAVED",
+        date_discovered=""
+    )
+
+    return {
+        "success": True,
+        "message": "Job saved successfully."
+    }
+
+
+@app.delete("/jobs/{job_id}")
+async def delete_saved_job(
+    job_id: int
+):
+
+    delete_job(
+        job_id
+    )
+
+    return {
+        "success": True,
+        "message": "Job deleted successfully."
+    }
 
 
 @app.get("/jobs")

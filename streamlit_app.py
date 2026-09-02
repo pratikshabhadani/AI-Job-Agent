@@ -2,9 +2,20 @@ import streamlit as st
 import requests
 
 st.set_page_config(
-    page_title="AI Job Agent",
+    page_title="AI Career Agent",
     layout="wide"
 )
+
+# ==================================
+# SESSION STATE
+# ==================================
+
+if "search_results" not in st.session_state:
+    st.session_state.search_results = []
+
+if "saved_job_links" not in st.session_state:
+    st.session_state.saved_job_links = set()
+
 
 page = st.sidebar.radio(
     "Navigation",
@@ -22,156 +33,210 @@ page = st.sidebar.radio(
 
 if page == "Job Search":
 
-    st.title("🚀 AI Job Agent")
+    st.title("🚀 AI Career Agent")
 
     st.write(
-        "Upload your resume and discover matching jobs."
-    )
-
-    resume = st.file_uploader(
-        "Upload Resume",
-        type=["pdf"]
+        "Search LinkedIn jobs across India."
     )
 
     target_role = st.text_input(
-        "Target Role"
+        "Role"
     )
 
-    location = st.text_input(
-        "Location"
-    )
-
-    work_type = st.selectbox(
-        "Work Type",
+    location = st.selectbox(
+        "Location",
         [
-            "Hybrid",
-            "Onsite",
-            "Remote"
+            "All",
+            "Remote",
+            "India",
+            "United States",
+            "Canada",
+            "United Kingdom"
         ]
     )
 
     experience_level = st.selectbox(
-        "Experience Level",
+        "Years of Experience",
         [
-            "0-3",
-            "3-5",
-            "5+"
+            "0–1 years",
+            "1–3 years",
+            "3–6 years",
+            "6–11 years",
+            "11+ years"
         ]
     )
 
-    if st.button("Run Job Search"):
+    if st.button("Search Jobs"):
 
-        if resume is None:
+        data = {
+            "target_role": target_role,
+            "experience_level": experience_level,
+            "location": location
+        }
+
+        response = requests.post(
+            "http://127.0.0.1:8000/job-search-agent",
+            data=data
+        )
+
+        if response.status_code != 200:
 
             st.error(
-                "Please upload a resume."
+                f"Backend Error: {response.status_code}"
+            )
+
+            st.text(
+                response.text
             )
 
         else:
 
-            files = {
-                "resume": resume
-            }
+            result = response.json()
 
-            data = {
-                "target_role": target_role,
-                "location": location,
-                "work_type": work_type,
-                "experience_level": experience_level
-            }
-
-            response = requests.post(
-                "http://127.0.0.1:8000/job-search-agent",
-                files=files,
-                data=data
+            st.session_state.search_results = (
+                result.get("top_jobs", [])
             )
 
-            if response.status_code != 200:
+            st.session_state.saved_job_links = set()
 
-                st.error(
-                    f"Backend Error: {response.status_code}"
+
+    # ==================================
+    # DISPLAY SEARCH RESULTS
+    # ==================================
+
+    if st.session_state.search_results:
+
+        st.subheader("Top Jobs")
+
+        for job in st.session_state.search_results:
+
+            job_link = job.get(
+                "application_link",
+                ""
+            )
+
+            st.write("---")
+
+            st.subheader(
+                job.get(
+                    "role",
+                    "Unknown Role"
+                )
+            )
+
+            st.write(
+                f"**{job.get('company', 'Unknown Company')}**"
+            )
+
+            details = []
+
+            if job.get("location"):
+                details.append(
+                    job["location"]
                 )
 
-                st.text(
-                    response.text
+            if job.get("salary"):
+                details.append(
+                    job["salary"]
                 )
 
-            else:
-
-                result = response.json()
-
-                st.success(
-                    "Analysis Complete"
+            if job.get("experience"):
+                details.append(
+                    job["experience"]
                 )
 
-                st.subheader(
-                    "Career Analysis"
+            if details:
+
+                st.caption(
+                    " • ".join(details)
                 )
 
-                st.metric(
-                    "Match Score",
-                    result["career_analysis"]["match_score"]
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                st.link_button(
+                    "View Job on YC",
+                    job_link,
+                    use_container_width=True
                 )
 
-                st.write("### Strengths")
+            with col2:
 
-                for skill in result["career_analysis"]["strengths"]:
-
-                    st.write(
-                        f"✅ {skill}"
-                    )
-
-                st.write("### Missing Skills")
-
-                for skill in result["career_analysis"]["missing_skills"]:
-
-                    st.write(
-                        f"❌ {skill}"
-                    )
-
-                st.subheader(
-                    "Top Jobs"
+                save_button_key = (
+                    f"save_job_{job_link}"
                 )
 
-                if len(result["top_jobs"]) == 0:
+                if job_link in (
+                    st.session_state.saved_job_links
+                ):
 
-                    st.warning(
-                        "No matching jobs found."
+                    st.success(
+                        "Job Saved"
                     )
 
                 else:
 
-                    for job in result["top_jobs"]:
+                    if st.button(
+                        "Save Job",
+                        key=save_button_key,
+                        use_container_width=True
+                    ):
 
-                        st.write("---")
+                        save_data = {
+                            "company": job.get(
+                                "company",
+                                ""
+                            ),
+                            "role": job.get(
+                                "role",
+                                ""
+                            ),
+                            "location": job.get(
+                                "location",
+                                ""
+                            ),
+                            "job_link": job_link
+                        }
 
-                        st.write(
-                            f"**Company:** {job['company']}"
+                        save_response = requests.post(
+                            "http://127.0.0.1:8000/save-job",
+                            data=save_data
                         )
 
-                        st.write(
-                            f"**Role:** {job['role']}"
-                        )
+                        if save_response.status_code == 200:
 
-                        st.write(
-                            f"**Location:** {job['location']}"
-                        )
+                            save_result = (
+                                save_response.json()
+                            )
 
-                        st.write(
-                            f"**Experience:** {job.get('experience', '')}"
-                        )
+                            if save_result["success"]:
 
-                        st.write(
-                            f"**Salary:** {job.get('salary', '')}"
-                        )
+                                st.session_state.saved_job_links.add(
+                                    job_link
+                                )
 
-                        st.write(
-                            f"**Fit Score:** {job['fit_score']}"
-                        )
+                                st.success(
+                                    "Job saved successfully."
+                                )
 
-                        st.write(
-                            f"**Application Link:** {job['application_link']}"
-                        )
+                            else:
+
+                                st.session_state.saved_job_links.add(
+                                    job_link
+                                )
+
+                                st.info(
+                                    save_result["message"]
+                                )
+
+                        else:
+
+                            st.error(
+                                f"Unable to save job: "
+                                f"{save_response.status_code}"
+                            )
+
 
 # ==================================
 # SAVED JOBS PAGE
@@ -187,45 +252,91 @@ elif page == "Saved Jobs":
             "http://127.0.0.1:8000/jobs"
         )
 
-        jobs_data = response.json()
+        if response.status_code != 200:
 
-        if len(jobs_data["jobs"]) == 0:
-
-            st.info(
-                "No jobs saved yet."
+            st.error(
+                f"Unable to load jobs: "
+                f"{response.status_code}"
             )
 
         else:
 
-            for job in jobs_data["jobs"]:
+            jobs_data = response.json()
 
-                st.subheader(
-                    f"{job['company']} - {job['role']}"
+            if len(jobs_data["jobs"]) == 0:
+
+                st.info(
+                    "No jobs saved yet."
                 )
 
-                st.write(
-                    f"📍 Location: {job['location']}"
-                )
+            else:
 
-                st.write(
-                    f"🎯 Fit Score: {job['fit_score']}"
-                )
+                for job in jobs_data["jobs"]:
 
-                st.write(
-                    f"📌 Status: {job['status']}"
-                )
+                    st.subheader(
+                        f"{job['company']} - {job['role']}"
+                    )
 
-                st.write(
-                    f"🔗 {job['job_link']}"
-                )
+                    st.write(
+                        f"📍 Location: {job['location']}"
+                    )
 
-                st.divider()
+                    st.write(
+                        f"📌 Status: {job['status']}"
+                    )
+
+                    if job.get("date_discovered"):
+
+                        st.caption(
+                            f"Saved: "
+                            f"{job['date_discovered']}"
+                        )
+
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+
+                        st.link_button(
+                            "View Job",
+                            job["job_link"],
+                            use_container_width=True
+                        )
+
+                    with col2:
+
+                        if st.button(
+                            "Delete",
+                            key=f"delete_job_{job['id']}",
+                            use_container_width=True
+                        ):
+
+                            delete_response = requests.delete(
+                                f"http://127.0.0.1:8000/jobs/{job['id']}"
+                            )
+
+                            if delete_response.status_code == 200:
+
+                                st.success(
+                                    "Job deleted."
+                                )
+
+                                st.rerun()
+
+                            else:
+
+                                st.error(
+                                    f"Unable to delete job: "
+                                    f"{delete_response.status_code}"
+                                )
+
+                    st.divider()
 
     except Exception as e:
 
         st.error(
             f"Unable to load jobs: {str(e)}"
         )
+
 
 # ==================================
 # CONNECTIONS PAGE
@@ -238,6 +349,7 @@ elif page == "Connections":
     st.info(
         "Connections module coming soon."
     )
+
 
 # ==================================
 # OUTREACH PAGE

@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 
 connection = sqlite3.connect(
@@ -85,6 +86,10 @@ def save_job(
     date_discovered
 ):
 
+    saved_at = datetime.now().isoformat(
+        timespec="seconds"
+    )
+
     cursor.execute("""
     INSERT INTO jobs (
         company,
@@ -103,7 +108,7 @@ def save_job(
         job_link,
         fit_score,
         status,
-        date_discovered
+        saved_at
     ))
 
     connection.commit()
@@ -113,6 +118,7 @@ def get_jobs():
 
     cursor.execute("""
     SELECT * FROM jobs
+    ORDER BY datetime(date_discovered) DESC
     """)
 
     rows = cursor.fetchall()
@@ -135,6 +141,16 @@ def get_jobs():
     return jobs
 
 
+def delete_job(job_id):
+
+    cursor.execute("""
+    DELETE FROM jobs
+    WHERE id = ?
+    """, (job_id,))
+
+    connection.commit()
+
+
 def job_exists(
     company,
     role
@@ -151,148 +167,3 @@ def job_exists(
     ))
 
     return cursor.fetchone() is not None
-
-
-# ==================================
-# CONNECTION FUNCTIONS
-# ==================================
-
-def save_connection(
-    job_id,
-    name,
-    linkedin_url,
-    company,
-    relationship_type,
-    priority_score,
-    status="IDENTIFIED"
-):
-
-    cursor.execute("""
-    INSERT INTO connections (
-        job_id,
-        name,
-        linkedin_url,
-        company,
-        relationship_type,
-        priority_score,
-        status
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (
-        job_id,
-        name,
-        linkedin_url,
-        company,
-        relationship_type,
-        priority_score,
-        status
-    ))
-
-    connection.commit()
-
-
-def get_connections_for_job(
-    job_id
-):
-
-    cursor.execute("""
-    SELECT *
-    FROM connections
-    WHERE job_id = ?
-    ORDER BY priority_score DESC
-    """, (job_id,))
-
-    rows = cursor.fetchall()
-
-    connections = []
-
-    for row in rows:
-
-        connections.append({
-            "id": row[0],
-            "job_id": row[1],
-            "name": row[2],
-            "linkedin_url": row[3],
-            "company": row[4],
-            "relationship_type": row[5],
-            "priority_score": row[6],
-            "status": row[7]
-        })
-
-    return connections
-
-
-# ==================================
-# OUTREACH FUNCTIONS
-# ==================================
-
-def save_outreach(
-    connection_id,
-    request_sent=0,
-    request_sent_date="",
-    accepted=0,
-    accepted_date="",
-    referral_requested=0,
-    referral_requested_date="",
-    followup_count=0,
-    last_followup_date="",
-    status="IDENTIFIED"
-):
-
-    cursor.execute("""
-    INSERT INTO outreach (
-        connection_id,
-        request_sent,
-        request_sent_date,
-        accepted,
-        accepted_date,
-        referral_requested,
-        referral_requested_date,
-        followup_count,
-        last_followup_date,
-        status
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        connection_id,
-        request_sent,
-        request_sent_date,
-        accepted,
-        accepted_date,
-        referral_requested,
-        referral_requested_date,
-        followup_count,
-        last_followup_date,
-        status
-    ))
-
-    connection.commit()
-
-
-def get_outreach():
-
-    cursor.execute("""
-    SELECT * FROM outreach
-    """)
-
-    rows = cursor.fetchall()
-
-    outreach_records = []
-
-    for row in rows:
-
-        outreach_records.append({
-            "id": row[0],
-            "connection_id": row[1],
-            "request_sent": row[2],
-            "request_sent_date": row[3],
-            "accepted": row[4],
-            "accepted_date": row[5],
-            "referral_requested": row[6],
-            "referral_requested_date": row[7],
-            "followup_count": row[8],
-            "last_followup_date": row[9],
-            "status": row[10]
-        })
-
-    return outreach_records
