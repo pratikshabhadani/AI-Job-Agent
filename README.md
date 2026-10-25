@@ -1,239 +1,115 @@
 # AI Job Agent
 
-AI-powered job search and career analysis assistant built with **FastAPI, Streamlit, SQLite, PyMuPDF, and Ollama/Phi-3**.
-
-## Overview
-
-AI Job Agent helps job seekers analyze their resumes, discover startup opportunities, evaluate job descriptions against their profiles, and save relevant opportunities for later tracking.
-
-The application combines a Streamlit frontend with a FastAPI backend and a local Ollama LLM for resume and job analysis.
+An AI-powered career assistant built with **Python, FastAPI, Streamlit, SQLite, and Ollama**. It helps job seekers analyze resumes, discover startup opportunities from Y Combinator (YC), compare resumes against job descriptions, and manage saved jobs.
 
 ## Features
 
 ### Resume Analysis
+- Upload PDF resumes.
+- Extract resume text using PyMuPDF.
+- Generate structured resume profiles using Phi-3 through Ollama.
+- Identify skills, work experience, education, projects, and certifications.
 
-* Upload a PDF resume
-* Extract resume text using PyMuPDF
-* Generate a structured candidate profile using Phi-3
-* Extract:
+### Job Description Analysis and Matching
+- Analyze job descriptions to identify skills, technologies, responsibilities, and seniority.
+- Compare a resume profile against a job description.
+- Generate an AI-based match score and summary.
+- Identify strong matches, partial matches, and missing skills.
 
-  * Skills
-  * Work experience
-  * Projects
-  * Education
-  * Relevant job titles
-* Identify technologies and responsibilities from the resume
-
-### Job Description Matching
-
-Users can paste a job description directly into the resume analysis section and compare it against their analyzed resume.
-
-The generated match report includes:
-
-* Overall match score
-* Summary
-* Strong matches
-* Partial matches
-* Missing skills
-* Experience match
-* Project match
-* Technical skills match
-* Responsibility match
-* Seniority match
-
-The matching system evaluates the candidate based on actual experience and responsibilities rather than relying only on keyword overlap.
-
-### YC Startup Job Search
-
-* Fetches startup job listings from Y Combinator's job board
-* Role-based filtering
-* Experience-based filtering
-* Location filtering
-* Salary information when available
-* Direct application links
-* Duplicate job prevention
+### Y Combinator Job Search
+- Fetch job listings from the YC startup jobs board.
+- Extract job information from HTML.
+- Filter jobs by role, location, and years of experience.
+- Display available salary information and links to original job listings.
 
 ### Saved Jobs Dashboard
+- Save selected job listings to SQLite.
+- View previously saved jobs.
+- Delete saved jobs when no longer needed.
+- Persist saved jobs across application sessions.
 
-* Save interesting opportunities
-* Persistent SQLite storage
-* View saved jobs
-* Delete saved jobs
-* Track discovered opportunities
-
-### Web Application
-
-* Streamlit frontend
-* FastAPI backend
-* Local LLM inference through Ollama
-* Interactive resume analysis and job matching interface
-
----
+### Web Interface
+- Streamlit frontend for user interaction.
+- FastAPI backend for processing requests.
+- SQLite database for persistent storage.
 
 ## Tech Stack
 
-### Frontend
-
-* Streamlit
-
-### Backend
-
-* FastAPI
-* Python
-
-### AI / LLM
-
-* Ollama
-* Phi-3
-
-### Resume Processing
-
-* PyMuPDF
-
-### Job Data
-
-* Requests
-* HTML parsing
-* Y Combinator Jobs
-
-### Database
-
-* SQLite
-
-### Other Technologies
-
-* JSON
-* REST APIs
-* Git
-
----
+| Component | Technology |
+|---|---|
+| Frontend | Streamlit |
+| Backend API | FastAPI |
+| Database | SQLite |
+| LLM Runtime | Ollama |
+| Language Model | Phi-3 |
+| PDF Processing | PyMuPDF |
+| HTTP Requests | Requests |
+| HTML Parsing | BeautifulSoup |
+| Programming Language | Python |
 
 ## Architecture
 
 ```text
-                    ┌──────────────────────┐
-                    │     Streamlit UI     │
-                    └──────────┬───────────┘
-                               │
-                               ▼
-                    ┌──────────────────────┐
-                    │    FastAPI Backend   │
-                    └──────────┬───────────┘
-                               │
-             ┌─────────────────┼─────────────────┐
-             │                 │                 │
-             ▼                 ▼                 ▼
-      Resume Analysis    Job Description     Job Search
-             │              Matching              │
-             ▼                 │                  ▼
-          PyMuPDF              │            YC Job Board
-             │                 │
-             ▼                 ▼
-        Ollama / Phi-3 ────────────────┐
-                                       │
-                                       ▼
-                              SQLite Database
+                    Streamlit Frontend
+                           |
+                           v
+                     FastAPI Backend
+                           |
+              +------------+------------+
+              |            |            |
+              v            v            v
+        Resume Analysis  YC Job Search  Job Description
+          (PyMuPDF +     (HTML Fetch   Analysis & Matching
+           Ollama)       and Filtering)   (Ollama)
+              |            |            |
+              +------------+------------+
+                           |
+                           v
+                      SQLite Database
+                       (Saved Jobs)
 ```
-
----
-
-## API Endpoints
-
-### Resume Analysis
-
-```text
-POST /analyze-resume
-```
-
-Accepts a PDF resume and returns a structured candidate profile.
-
-### Job Description Analysis
-
-```text
-POST /analyze-job
-```
-
-Analyzes a pasted job description.
-
-### Resume–Job Matching
-
-```text
-POST /analyze-job-match
-```
-
-Compares a job description against the analyzed resume profile and generates a match report.
-
-### Job Search
-
-```text
-POST /job-search-agent
-```
-
-Searches for relevant startup jobs.
-
-### Saved Jobs
-
-```text
-POST /save-job
-GET  /jobs
-DELETE /jobs/{job_id}
-```
-
-Provides persistent saved-job management.
-
----
 
 ## Project Structure
 
 ```text
 AI-Job-Agent/
-│
 ├── agents/
 │   ├── career_tools.py
-│   ├── yc_jobs.py
 │   ├── job_analyzer.py
-│   ├── linkedin_jobs.py
-│   └── resume_analyzer.py
-│
+│   ├── resume_analyzer.py
+│   ├── yc_jobs.py
+│   └── linkedin_jobs.py
 ├── database/
 │   └── db.py
-│
 ├── main.py
 ├── streamlit_app.py
 ├── requirements.txt
 └── README.md
 ```
 
----
+## Installation and Setup
 
-## Setup
-
-### 1. Clone Repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/pratikshabhadani/AI-Job-Agent.git
-
 cd AI-Job-Agent
 ```
 
-### 2. Create Virtual Environment
+### 2. Create a Virtual Environment
+
+**Windows:**
 
 ```bash
 python -m venv venv
-```
-
-Activate it:
-
-**macOS / Linux**
-
-```bash
-source venv/bin/activate
-```
-
-**Windows**
-
-```bash
 venv\Scripts\activate
+```
+
+**macOS/Linux:**
+
+```bash
+python -m venv venv
+source venv/bin/activate
 ```
 
 ### 3. Install Dependencies
@@ -242,155 +118,79 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 4. Install Ollama
+### 4. Install Ollama and Download Phi-3
 
-Install Ollama and make sure it is running.
-
-Pull the Phi-3 model:
+Install Ollama from [ollama.com](https://ollama.com/), then run:
 
 ```bash
 ollama pull phi3
 ```
 
-Verify:
+Ensure the Ollama service is running before using the AI-powered features.
 
-```bash
-ollama list
-```
-
-You should see the Phi-3 model available.
-
-### 5. Start FastAPI Backend
+### 5. Start the FastAPI Backend
 
 ```bash
 uvicorn main:app --reload
 ```
 
-The backend runs locally on:
+The backend will typically run at:
 
-```text
-http://127.0.0.1:8000
-```
+`http://127.0.0.1:8000`
 
-### 6. Start Streamlit Frontend
+API documentation is available at:
 
-Open another terminal with the virtual environment activated:
+`http://127.0.0.1:8000/docs`
+
+### 6. Start the Streamlit Frontend
+
+Open a second terminal, activate the virtual environment, and run:
 
 ```bash
 streamlit run streamlit_app.py
 ```
 
-The Streamlit application will provide the web interface.
+## API Endpoints
 
----
+| Endpoint | Purpose |
+|---|---|
+| `POST /analyze-resume` | Analyze an uploaded resume |
+| `POST /analyze-job` | Analyze a job description |
+| `POST /analyze-job-match` | Compare a resume profile against a job description |
+| `POST /job-search-agent` | Search YC jobs using specified constraints |
+| `POST /save-job` | Save a selected job |
+| `GET /jobs` | Retrieve saved jobs |
+| `DELETE /jobs/{job_id}` | Delete a saved job |
 
 ## Example Workflow
 
-```text
-1. Upload Resume
-        ↓
-2. Analyze Resume
-        ↓
-3. Generate Candidate Profile
-        ↓
-4. View Skills, Experience, Projects and Education
-        ↓
-5. Search Startup Jobs
-        ↓
-6. View Job Opportunities
-        ↓
-7. Save Relevant Jobs
-        ↓
-8. Paste a Job Description
-        ↓
-9. Compare Job Against Resume
-        ↓
-10. View Match Score and Detailed Report
-```
+1. Upload a PDF resume.
+2. Analyze the resume to generate a structured profile.
+3. Enter a target role, location, and experience level.
+4. Search for relevant YC startup jobs.
+5. Review job details and open the original listing.
+6. Save interesting jobs to the dashboard.
+7. Paste a job description to analyze it or compare it against the resume.
+8. View or delete saved jobs.
 
----
+## Limitations
 
-## Job Matching Example
+- Resume analysis and match scores are AI-generated and may not always be accurate.
+- Job availability depends on the YC jobs board and its current HTML structure.
+- The current job search filters by role, location, and experience; it does not automatically rank every listing by resume-fit score.
+- Jobs are saved when selected by the user, not automatically when search results appear.
+- The current implementation uses Python; it does not use Node.js.
 
-A candidate can paste a job description such as:
+## Future Enhancements
 
-```text
-We are looking for a Software Engineer with experience
-in Python, REST APIs, databases, and backend development.
-Experience with FastAPI and cloud technologies is preferred.
-```
-
-The system compares these requirements against the candidate's analyzed resume and produces:
-
-```text
-Overall Match Score
-
-Strong Matches
-- Python
-- REST APIs
-- Backend Development
-
-Partial Matches
-- Database technologies
-
-Missing Skills
-- FastAPI
-- Cloud technologies
-
-Experience Match
-Project Match
-Technical Match
-Responsibility Match
-Seniority Match
-```
-
----
-
-## Performance Benchmarking
-
-The application can be benchmarked locally by measuring API response times across multiple requests.
-
-For example, the `/jobs` endpoint can be tested repeatedly and the arithmetic mean of the measured response times can be calculated.
-
-Performance figures should be reported only from actual benchmark measurements.
-
----
-
-## Current Scope
-
-The current implementation focuses on:
-
-* Resume analysis
-* Candidate profile extraction
-* Startup job discovery
-* Job filtering
-* Saved-job management
-* Job description analysis
-* Resume-to-job matching
-
-LinkedIn-related functionality is present in the project structure but should only be considered a completed feature if the corresponding workflow is fully operational.
-
----
-
-## Future Roadmap
-
-* Multi-source job aggregation
-* LinkedIn job integration
-* Alumni discovery
-* Referral tracking
-* Outreach management
-* Connection tracking
-* Follow-up automation
-* Personalized application assistance
-* Improved job ranking
-* More advanced resume-job matching
-
-
----
+- Integrate additional job boards.
+- Add more advanced resume-to-job relevance ranking.
+- Introduce application and referral tracking.
+- Add outreach management and follow-up reminders.
+- Support multi-source job aggregation.
 
 ## Author
 
 **Pratiksha Bhadani**
 
-GitHub:
-[https://github.com/pratikshabhadani](https://github.com/pratikshabhadani)
+[GitHub Profile](https://github.com/pratikshabhadani)
